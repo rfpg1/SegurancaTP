@@ -1,14 +1,22 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Scanner;
 
 public class MyServer {
 
 	private final static int MEGABYTE = 1024;
+	private final static String FILE = "usersServer.txt";
 	
+	private HashMap<String, String> users = new HashMap<>();
+
 	public static void main(String[] args) {
 		System.out.println("servidor: main");
 		MyServer server = new MyServer();
@@ -20,6 +28,7 @@ public class MyServer {
 		ServerSocket sSoc = null;
 
 		try {
+			loadUsers();
 			sSoc = new ServerSocket(23456);
 		} catch (IOException e) {
 			System.err.println(e.getMessage());
@@ -31,13 +40,27 @@ public class MyServer {
 				Socket inSoc = sSoc.accept();
 				ServerThread newServerThread = new ServerThread(inSoc);
 				newServerThread.start();
-			}
-			catch (IOException e) {
+			} catch(FileNotFoundException e) {
+				System.out.println("Erro no ficheiro");
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 
 		}
 		//sSoc.close();
+	}
+
+
+	private void loadUsers() throws FileNotFoundException {
+		Scanner sc = new Scanner(new File(FILE));
+		while(sc.hasNextLine()) {
+			String line = sc.nextLine();
+			String[] credencias = line.split(":");
+			users.put(credencias[0], credencias[1]);
+		}
+		
+		sc.close();
+		
 	}
 
 
@@ -59,20 +82,18 @@ public class MyServer {
 				String user = null;
 				String passwd = null;
 
-				try {
-					user = (String)inStream.readObject();
-					passwd = (String)inStream.readObject();
-					System.out.println("thread: depois de receber a password e o user");
-				}catch (ClassNotFoundException e1) {
-					e1.printStackTrace();
-				}
+
+				user = (String)inStream.readObject();
+				passwd = (String)inStream.readObject();
+				System.out.println("thread: depois de receber a password e o user");
+
 
 				//TODO: refazer
 				//este codigo apenas exemplifica a comunicacao entre o cliente e o servidor
 				//nao faz qualquer tipo de autenticacao
-				if (user.length() != 0){
+				if (autenticado(user, passwd)){
 					outStream.writeObject(true);
-					FileOutputStream fos = new FileOutputStream("usersServer.txt");
+					FileOutputStream fos = new FileOutputStream(FILE);
 					int filesize = (int) inStream.readObject();
 					byte[] buffer = new byte[MEGABYTE];
 					int read = 0;
@@ -84,7 +105,10 @@ public class MyServer {
 					fos.close();
 				}
 				else {
+					System.out.println("User não reconhecido");
 					outStream.writeObject(false);
+					registaUser(user, passwd);
+					outStream.writeObject("User registado");
 				}
 
 				outStream.close();
@@ -99,5 +123,26 @@ public class MyServer {
 				e.printStackTrace();
 			}
 		}
+
+		private void registaUser(String user, String passwd) throws FileNotFoundException {
+			PrintWriter pw = new PrintWriter(FILE);
+			for(String s : users.keySet()) {
+				pw.println(s + ":" + users.get(s));
+			}
+			users.put(user, passwd);
+			pw.println(user + ":" + passwd);
+			pw.close();
+			
+		}
+
+		private boolean autenticado(String user, String passwd) {
+			String pw = users.get(user);
+			if(pw != null) {
+				return pw.equals(passwd);
+			} else {
+				return false;
+			}
+		}
+
 	}
 }

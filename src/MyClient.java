@@ -33,6 +33,7 @@ public class MyClient {
 			
 			if(b) {
 				File file = new File(FILE);
+				file.getName();
 				FileInputStream fis = new FileInputStream(file);
 				int filesize = (int) file.length();
 				outStream.writeObject(filesize);
@@ -41,6 +42,9 @@ public class MyClient {
 					outStream.write(buffer, 0, buffer.length);
 				}
 				fis.close();
+			} else {
+				String s = (String) inStream.readObject();
+				System.out.println(s);
 			}
 			//inStream.close();
 			//outStream.close();
