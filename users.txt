@@ -1,1 +1,1 @@
-rfpg1:1234
+rfpg1:147:TextoA.txt
