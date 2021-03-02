@@ -59,9 +59,10 @@ public class MyClient {
 					//File file = new File(FILE);
 					File file = new File(fileName);
 					outStream.writeObject(file.getName());
-					FileInputStream fis = new FileInputStream(file);
+					
 					int filesize = (int) file.length();
 					outStream.writeObject(filesize);
+					FileInputStream fis = new FileInputStream(file);
 					byte[] buffer = new byte[MEGABYTE];
 					while(fis.read(buffer, 0, buffer.length)> 0) {
 						outStream.write(buffer, 0, buffer.length);
